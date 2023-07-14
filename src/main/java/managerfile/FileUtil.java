@@ -107,27 +107,15 @@ public class FileUtil {
     }
 
 
-    private  void  deletetime()
-    {
+    private  void  deletetime() throws IOException {
         DBManager dbManager=new DBManager();
         String dir=AppclitionConfig.dirPath;
-        //按照时间
-        long ccur=System.currentTimeMillis();
-        String  v=  dbManager.readDB();
-        String str=  dbManager.getDB();
-        Calendar calendar=Calendar.getInstance();
-        Plocy p=  Enum.valueOf(Plocy.class,v);
-        long deletelen=0;
-        switch (p) {
-            case Hours -> calendar.add(Calendar.HOUR, -1 * Integer.valueOf(str));
-            case Day -> calendar.add(Calendar.DATE, -1 * Integer.valueOf(str));
-            case Weeks -> calendar.add(Calendar.DATE, -1 * Integer.valueOf(str) * 7);
-            case Month -> calendar.add(Calendar.MONTH, -1 * Integer.valueOf(str));
-            case quarter -> calendar.add(Calendar.MONTH, -1 * Integer.valueOf(str) * 3);
-            case HaldYrea -> calendar.add(Calendar.MONTH, -1 * Integer.valueOf(str) * 6);
-            case year -> calendar.add(Calendar.YEAR, -1 * Integer.valueOf(str));
+        int storePlocy=AppclitionConfig.storePlocy;
+        if(storePlocy==1)
+        {
+            checktime();
         }
-        //查找文件
+
     }
     Timer timer=null;
     public  void  start(int time,int delay) {
