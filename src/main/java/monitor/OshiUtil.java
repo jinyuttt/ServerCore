@@ -15,11 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class OshiUtil {
-    SystemInfo si = new SystemInfo();
-
-    //HardwareAbstractionLayer hal = si.getHardware();
-   /// OperatingSystem os = si.getOperatingSystem();
-
 
     public  void  print()
     {

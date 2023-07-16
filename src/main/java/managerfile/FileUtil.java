@@ -102,49 +102,99 @@ public class FileUtil {
         }
         Calendar calendar=Calendar.getInstance();
         calendar.setTime(deleteFile);
-       deletefile(AppclitionConfig.dirPath,calendar);
+        deletefile(AppclitionConfig.dirPath,calendar);
 
     }
 
+    /**
+     * 存储比例删除
+     * @throws IOException
+     */
+  private  void storeUsage() throws IOException {
+      //存储占比
+      while (AppclitionConfig.isStore) {
+          checktime();
+      }
+  }
 
-    private  void  deletetime() throws IOException {
-        DBManager dbManager=new DBManager();
-        String dir=AppclitionConfig.dirPath;
+    /**
+     * 存储时间删除
+     * @throws IOException
+     */
+  private  void  storeTime() throws IOException {
+      DBManager dbManager=new DBManager();
+      String dir=AppclitionConfig.dirPath;
+      Calendar calendar=Calendar.getInstance();
+      if(ConfigLoad.readDB)
+      {
+          //通过数据库获取策略
+          String  v=  dbManager.readDB();
+          String str=  dbManager.getDB();
+
+          Plocy p=  Enum.valueOf(Plocy.class,v);
+          switch (p)
+          {
+              case Hours -> calendar.add(Calendar.HOUR,-1*Integer.valueOf(str));
+              case Day -> calendar.add(Calendar.DATE,-1*Integer.valueOf(str));
+              case Weeks -> calendar.add(Calendar.WEEK_OF_MONTH,-1*Integer.valueOf(str));
+              case Month -> calendar.add(Calendar.MONTH,-1*Integer.valueOf(str));
+              case quarter -> calendar.add(Calendar.MONTH,-3);
+              case HaldYrea -> calendar.add(Calendar.MONTH,6);
+              case year -> calendar.add(Calendar.YEAR,1);
+          }
+      }
+      else {
+          calendar.add(Calendar.HOUR, -1 * AppclitionConfig.storetime);
+      }
+      deletefile(dir,calendar);
+  }
+
+
+    /**
+     * 删除文件
+     * @throws IOException
+     */
+    private  void  deleteCheck() throws IOException {
+
         int storePlocy=AppclitionConfig.storePlocy;
         if(storePlocy==1)
         {
-            checktime();
-        }
 
+            storeUsage();
+            //按照保存时间
+           storeTime();
+        }
+        else if(storePlocy==2)
+        {
+             storeUsage();
+        }
+        else if(storePlocy==3)
+        {
+            storeTime();
+        }
     }
     Timer timer=null;
+
+    /**
+     * 开启检查
+     * @param time
+     * @param delay
+     */
     public  void  start(int time,int delay) {
         timer=new Timer();
+        long depaly=1000*60L;
+        long perid=1000*60*60;
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                Calendar lstcalendar=Calendar.getInstance();
-               if(AppclitionConfig.readDB)
-               {
-                   DBManager dbManager=new DBManager();
-                  String  v=  dbManager.readDB();
-                  String str=  dbManager.getDB();
-                   Calendar calendar=Calendar.getInstance();
-                   Plocy p=  Enum.valueOf(Plocy.class,v);
-                switch (p)
-                {
-                    case Hours -> lstcalendar.add(Calendar.HOUR,Integer.valueOf(str));
-                    case Day -> lstcalendar.add(Calendar.DATE,Integer.valueOf(str));
-                    case Weeks -> lstcalendar.add(Calendar.WEEK_OF_MONTH,Integer.valueOf(str));
-                    case Month -> lstcalendar.add(Calendar.MONTH,Integer.valueOf(str));
-                    case quarter -> lstcalendar.add(Calendar.MONTH,Integer.valueOf(str)*3);
-                    case HaldYrea -> lstcalendar.add(Calendar.MONTH,6);
-                    case year -> lstcalendar.add(Calendar.YEAR,1);
-                }
 
-               }
+                try {
+                    deleteCheck();
+                } catch (IOException e) {
+                    log.error(e);
+                }
                 log.info("启动文件删除");
             }
-        }, 1000, 2000);
+        }, delay, perid);
     }
 }
