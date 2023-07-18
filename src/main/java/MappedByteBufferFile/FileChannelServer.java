@@ -23,6 +23,10 @@ public class FileChannelServer  implements  IChannelNotify{
     private  final  int so_recBuf=20*1024*1024;
     private List<IWorker> lst=new ArrayList<>();
 
+    /**
+     * 端口
+     * @param port
+     */
     public FileChannelServer(int port)
     {
         try {
@@ -37,6 +41,10 @@ public class FileChannelServer  implements  IChannelNotify{
 
     }
 
+    /**
+     * 开始监听
+     * @throws IOException
+     */
     public  void  Start() throws IOException {
         while (true) {
             ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -137,6 +145,11 @@ public class FileChannelServer  implements  IChannelNotify{
         }
         return  f;
     }
+
+    /**
+     * 移除任务
+     * @param obj
+     */
     @Override
     public void sendMsg(IWorker obj) {
         if(obj!=null)

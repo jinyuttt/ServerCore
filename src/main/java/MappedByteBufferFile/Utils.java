@@ -2,6 +2,9 @@ package MappedByteBufferFile;
 
 import java.io.File;
 
+/**
+ * 工具
+ */
 public class Utils {
 
     public static String  getSeparator()

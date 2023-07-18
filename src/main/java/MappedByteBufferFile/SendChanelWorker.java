@@ -3,6 +3,10 @@ package MappedByteBufferFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+
+/**
+ * 文件发送任务
+ */
 public class SendChanelWorker extends Thread implements IWorker {
     private final SocketChannel socket;
     private final String fpath;
