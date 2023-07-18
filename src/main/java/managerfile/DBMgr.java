@@ -12,8 +12,8 @@ import java.sql.Statement;
 /**
  * 读取数据库
  */
-public class DBManager {
-    private Log log = LogFactory.getLog(DBManager.class);
+public class DBMgr {
+    private Log log = LogFactory.getLog(DBMgr.class);
     HikariDataSource ds=null;
     public void init()
     {

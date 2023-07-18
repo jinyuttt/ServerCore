@@ -25,10 +25,10 @@ import java.util.zip.ZipOutputStream;
 /**
  * 文件压缩
  */
-public class FileUtil {
+public class ZFileUtil {
 
     //private static final Logger logger = LogUtil.get();
-    private static Log logger = LogFactory.getLog(FileUtil.class);
+    private static Log logger = LogFactory.getLog(ZFileUtil.class);
     private static String[] SUFFIX_NAMES = {".zip", ".rar", ".7z"};
 
     private static String ZIP = ".zip";
@@ -581,7 +581,7 @@ public class FileUtil {
                 if (checkFileExistence(filePath, fileName)) {
                     msg = "存在重复的文件名：" + fileName;
                 }
-                FileUtil.moveFile(allList.get(i).get("filePath"), filePath, fileName);
+                ZFileUtil.moveFile(allList.get(i).get("filePath"), filePath, fileName);
             }
         }
         return msg;
@@ -731,13 +731,13 @@ public class FileUtil {
         }
             suffix = suffix.toLowerCase();
             if (RAR.equals(suffix)) {
-                msg = FileUtil.unrar(compressedFilePath, targetPath, true);
+                msg = ZFileUtil.unrar(compressedFilePath, targetPath, true);
             }
             if (ZIP.equals(suffix)) {
-                msg = FileUtil.unzip(compressedFilePath, targetPath, true);
+                msg = ZFileUtil.unzip(compressedFilePath, targetPath, true);
             }
             if (SEVEN_Z.equals(suffix)) {
-                msg = FileUtil.unSevenZ(compressedFilePath, targetPath, true);
+                msg = ZFileUtil.unSevenZ(compressedFilePath, targetPath, true);
             }
 
 

@@ -122,7 +122,7 @@ public class FileUtil {
      * @throws IOException
      */
   private  void  storeTime() throws IOException {
-      DBManager dbManager=new DBManager();
+      DBMgr dbManager=new DBMgr();
       String dir=AppclitionConfig.dirPath;
       Calendar calendar=Calendar.getInstance();
       if(ConfigLoad.readDB)
