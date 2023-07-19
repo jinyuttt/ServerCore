@@ -9,12 +9,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.sql.SQLException;
-import java.util.StringJoiner;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
+/**
+ * 软件升级
+ */
 public class SoftCheck {
     private Log log = LogFactory.getLog(FileUtil.class);
+
+    private List<String> lst=new ArrayList<>();
     /**
      * 定时更新
      * @param time
@@ -48,18 +51,20 @@ public class SoftCheck {
             throw new RuntimeException(e);
         }
     }
-    private  void   getDB() throws SQLException {
+    private  void   getDB(String name) throws SQLException {
         try (var statement = DBManager.getInstance().getDs(null).getConnection().createStatement()) {
             try {
-                var view = statement.executeQuery("select  v from vison where  name= like 'test'");
+                String sql=String.format("select  ver from soft where  name like '{0}'",name);
+                var view = statement.executeQuery(sql);
                 String ver = view.getString("ver");
-                var h2 = H2Util.getConnect().createStatement().executeQuery("select  v from vison where  name= like 'test'");
+                var h2 = H2Util.getConnect().createStatement().executeQuery(sql);
                 var cur = h2.getString("ver");
                 if (ver != cur) {
                     //2个版本不等
                     //检查是否有大版更新。
                     //查询表中是否只是一个文件，并且是压缩包。
-                    var c = statement.executeQuery("select v num from  version where name='test'");
+                    String mysql=String.format("select file  from  soft m,version n where m.id=n.softid and name='{0}'",name);
+                    var c = statement.executeQuery(mysql);
                     int num = c.getRow();
                     if (num == 1) {
                         String file = c.getString(0);
@@ -71,12 +76,14 @@ public class SoftCheck {
                         }
                     } else {
                         //查询需要更新的文件
-                        var rs = H2Util.getConnect().createStatement().executeQuery("select md from version where  name like 'test'");
+                       String query=String.format("select file  from  soft m,version n where m.id=n.softid and name='{0}'",name);
+                        var rs = H2Util.getConnect().createStatement().executeQuery(mysql);
                         StringJoiner stringJoiner = new StringJoiner(",");
                         int rcount = rs.getRow();
                         for (int i = 0; i < rcount; i++) {
                             stringJoiner.add(rs.getString(0));
                         }
+
                         var drs = statement.executeQuery("select file from version where name like 'test' and md in" + stringJoiner.toString() + ")");
                         rcount = drs.getRow();
                         for (int i = 0; i < rcount; i++) {
@@ -85,8 +92,8 @@ public class SoftCheck {
                             //直接下载目录
                             FtpClient.download("", "192.168.10.12", "root", 21, "root", "ftp", patth, patth);
                             //同时入库本地
-                            String sql = String.format("insert into version(file,version,md,name) values({0},{1},{2},{3} ", patth, ver, md5, "tes");
-                            H2Util.getConnect().createStatement().execute(sql);
+                            String sqlt = String.format("insert into version(file,version,md,name) values({0},{1},{2},{3} ", patth, ver, md5, "tes");
+                            H2Util.getConnect().createStatement().execute(sqlt);
                         }
 
                     }
