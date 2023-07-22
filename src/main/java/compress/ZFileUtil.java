@@ -27,7 +27,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class ZFileUtil {
 
-    //private static final Logger logger = LogUtil.get();
+
     private static Log logger = LogFactory.getLog(ZFileUtil.class);
     private static String[] SUFFIX_NAMES = {".zip", ".rar", ".7z"};
 
@@ -296,7 +296,7 @@ public class ZFileUtil {
      * @param targetPath  解压后的文件保存的路径
      * @return
      */
-    public static String unzip(String zipFilePath, String targetPath, boolean isInSameDir) {
+    public static String unzip(String zipFilePath, String targetPath, boolean isInSameDir,StringBuffer bufPath) {
         StringBuffer msg = new StringBuffer();
         OutputStream os = null;
         InputStream is = null;
@@ -326,6 +326,7 @@ public class ZFileUtil {
                             }
                         }
                         //判断文件是否已经存在。
+
                         if (checkFileExistence(targetPath, zipFileName)) {
                             //msg.setLength(0);
                             msg.append("存在重复的文件名：" + zipFileName);
@@ -340,16 +341,12 @@ public class ZFileUtil {
                             os.write(buffer, 0, readLen);
                             os.flush();
                         }
-//                        if (zipFileName.lastIndexOf(".") > -1) {
-//                            String suffix = zipFileName.substring(zipFileName.lastIndexOf("."), zipFileName.length()).toLowerCase();
-//                            if (zipFileName.lastIndexOf(".") > -1 && Arrays.asList(SUFFIX_NAMES).contains(suffix)) {
-//                                String ret = unCompressedFilesToSameDir(targetPath + File.separator + zipFileName, targetPath, suffix);
-//                                if (!StringUtils.isEmpty(ret)) {
-//                                    //msg.setLength(0);
-//                                    msg.append(ret);
-//                                }
-//                            }
-//                        }
+                       //保持路径
+                        if(bufPath!=null)
+                        {
+                            bufPath.append(targetFile);
+                            bufPath.append(";");
+                        }
                     }
                     if (zipEntry.isDirectory()) {
                         File file = new File(targetPath + File.separator + zipEntry.getName());
@@ -373,14 +370,14 @@ public class ZFileUtil {
             }
 
             if (isInSameDir) {
-                String ret = moveToRootDir(targetPath);
+                String ret = moveToRootDir(targetPath,bufPath);
                 if (ret != null) {
                     msg.append(ret);
                 }
             }
 
             if (null != directoryFile) {
-                StringBuffer stringBuffer = unFile(directoryFile, targetPath, isInSameDir);
+                StringBuffer stringBuffer = unFile(directoryFile, targetPath, isInSameDir,bufPath);
                 msg.append(stringBuffer);
             }
 
@@ -395,7 +392,7 @@ public class ZFileUtil {
     }
 
 
-    private static StringBuffer unFile(File sourceFile, String targetPath, boolean isInSameDir) {
+    private static StringBuffer unFile(File sourceFile, String targetPath, boolean isInSameDir,StringBuffer bufPath) {
         StringBuffer msg = new StringBuffer();
         File[] sourceFiles = sourceFile.listFiles();
         for (File sf : sourceFiles) {
@@ -406,7 +403,7 @@ public class ZFileUtil {
                     String suffix = filePath.substring(filePath.lastIndexOf("."), filePath.length()).toLowerCase();
                     //如果是压缩包，继续解压缩，也就是解压到目标目录下没有rar文件位置
                     if (filePath.lastIndexOf(".") > -1 && Arrays.asList(SUFFIX_NAMES).contains(suffix)) {
-                        String ret = unCompressedFilesToSameDir(filePath, targetPath, suffix);
+                        String ret = unCompressedFilesToSameDir(filePath, targetPath, suffix,bufPath);
                         if (ret != null) {
                             msg.append(ret);
                         }
@@ -416,9 +413,9 @@ public class ZFileUtil {
 
             if (sf.isDirectory()) {
                 if (isInSameDir) {
-                    unFile(sf, targetPath, isInSameDir);
+                    unFile(sf, targetPath, isInSameDir,bufPath);
                 } else {
-                    unFile(sf, sf.getAbsolutePath(), isInSameDir);
+                    unFile(sf, sf.getAbsolutePath(), isInSameDir,bufPath);
                 }
             }
         }
@@ -489,7 +486,7 @@ public class ZFileUtil {
      * @param isInSameDir
      * @return
      */
-    public static String unrar(String rarFilePath, String targetPath, boolean isInSameDir) {
+    public static String unrar(String rarFilePath, String targetPath, boolean isInSameDir,StringBuffer buffer) {
         StringBuffer msg = new StringBuffer();
         OutputStream os = null;
         InputStream is = null;
@@ -506,10 +503,11 @@ public class ZFileUtil {
             ShellUtil.excuete(cmd);
             // 把解压后所有子目录的文件都移入目标目录
             if (isInSameDir) {
-                String ret = moveToRootDir(targetPath);
+                String ret = moveToRootDir(targetPath,buffer);
                 if (ret != null) {
                     msg.setLength(0);
                     msg.append(ret);
+
                 }
             }
             //如果解压的文件在在目标文件夹中，将其删除
@@ -531,7 +529,7 @@ public class ZFileUtil {
                             String suffix = filePath.substring(filePath.lastIndexOf("."), filePath.length()).toLowerCase();
                             //如果是压缩包，继续解压缩，也就是解压到目标目录下没有rar文件位置
                             if (filePath.lastIndexOf(".") > -1 && Arrays.asList(SUFFIX_NAMES).contains(suffix)) {
-                                String ret = unCompressedFilesToSameDir(filePath, targetPath, suffix);
+                                String ret = unCompressedFilesToSameDir(filePath, targetPath, suffix,buffer);
                                 if (ret != null) {
                                     msg.setLength(0);
                                     msg.append(ret);
@@ -550,7 +548,6 @@ public class ZFileUtil {
             }
             return msg.toString();
         } catch (Exception e) {
-
             logger.error(e.getMessage(), e);
         } finally {
             closeZipStream(zipFile, is, os);
@@ -563,7 +560,7 @@ public class ZFileUtil {
      *
      * @param filePath
      */
-    private static String moveToRootDir(String filePath) {
+    private static String moveToRootDir(String filePath,StringBuffer buffer) {
         String msg = "";
         List<Map<String, String>> allList = new ArrayList<>();
         File baseFile = new File(filePath);
@@ -582,6 +579,11 @@ public class ZFileUtil {
                     msg = "存在重复的文件名：" + fileName;
                 }
                 ZFileUtil.moveFile(allList.get(i).get("filePath"), filePath, fileName);
+                if(buffer!=null)
+                {
+                    buffer.append(filePath);
+                    buffer.append(";");
+                }
             }
         }
         return msg;
@@ -642,7 +644,7 @@ public class ZFileUtil {
      * @param isInSameDir
      * @return
      */
-    public static String unSevenZ(String rarFilePath, String targetPath, boolean isInSameDir) {
+    public static String unSevenZ(String rarFilePath, String targetPath, boolean isInSameDir,StringBuffer bufPath) {
         StringBuffer msg = new StringBuffer();
         try {
             SevenZFile sevenZFile = new SevenZFile(new File(rarFilePath));
@@ -663,6 +665,7 @@ public class ZFileUtil {
                         }
                     }
                 }
+
                 if (checkFileExistence(targetPath, sevenZFileName)) {
                     msg.setLength(0);
                     msg.append("存在重复的文件名：" + sevenZFileName);
@@ -673,11 +676,19 @@ public class ZFileUtil {
                 sevenZFile.read(content, 0, content.length);
                 out.write(content);
                 out.close();
+
+                //保持路径
+                if(bufPath!=null)
+                {
+                    bufPath.append(targetPath
+                            + File.separator + sevenZFileName);
+                    bufPath.append(";");
+                }
                 entry = sevenZFile.getNextEntry();
                 if (sevenZFileName.lastIndexOf(".") > -1) {
                     String suffix = sevenZFileName.substring(sevenZFileName.lastIndexOf("."), sevenZFileName.length()).toLowerCase();
                     if (Arrays.asList(SUFFIX_NAMES).contains(suffix)) {
-                        String ret = unCompressedFilesToSameDir(targetPath + File.separator + sevenZFileName, targetPath, suffix);
+                        String ret = unCompressedFilesToSameDir(targetPath + File.separator + sevenZFileName, targetPath, suffix,bufPath);
                         if (ret != null) {
                             msg.setLength(0);
                             msg.append(ret);
@@ -722,8 +733,10 @@ public class ZFileUtil {
      * @param compressedFilePath 压缩文件的路径，
      * @param targetPath         解压后保存的路径
      * @param suffix             压缩文件后缀名
+     * @param files              压缩包中文件名
+     * @return                  覆盖的名称
      */
-    public static String unCompressedFilesToSameDir(String compressedFilePath, String targetPath, String suffix) {
+    public static String unCompressedFilesToSameDir(String compressedFilePath, String targetPath, String suffix,StringBuffer files) {
         String msg = "";
         if (suffix == null||suffix.isEmpty()) {
             String f=compressedFilePath.substring(compressedFilePath.lastIndexOf("."));
@@ -731,14 +744,59 @@ public class ZFileUtil {
         }
             suffix = suffix.toLowerCase();
             if (RAR.equals(suffix)) {
-                msg = ZFileUtil.unrar(compressedFilePath, targetPath, true);
+                msg = ZFileUtil.unrar(compressedFilePath, targetPath, true,files);
             }
             if (ZIP.equals(suffix)) {
-                msg = ZFileUtil.unzip(compressedFilePath, targetPath, true);
+                msg = ZFileUtil.unzip(compressedFilePath, targetPath, true,files);
             }
             if (SEVEN_Z.equals(suffix)) {
-                msg = ZFileUtil.unSevenZ(compressedFilePath, targetPath, true);
+                msg = ZFileUtil.unSevenZ(compressedFilePath, targetPath, true,files);
             }
+            if(files!=null)
+            {
+                //将路径过滤
+                String[] tmp=files.toString().split(";");
+                files.setLength(0);
+                for (String p:tmp
+                     ) {
+                 File dir=new File(p);
+                 if(dir.isFile())
+                 {
+                      files.append(p);
+                     files.append(";");
+                 }
+                }
+            }
+
+        return msg;
+    }
+
+    /**
+     * 解压缩文件
+     * [.rar .zip .7z]
+     *
+     * @param compressedFilePath 压缩文件的路径，
+     * @param targetPath         解压后保存的路径
+     * @param suffix             压缩文件后缀名
+     * @param files              压缩包中文件名
+     * @return                  覆盖的名称
+     */
+    public static String unCompressedFiles(String compressedFilePath, String targetPath, String suffix,StringBuffer files) {
+        String msg = "";
+        if (suffix == null||suffix.isEmpty()) {
+            String f=compressedFilePath.substring(compressedFilePath.lastIndexOf("."));
+            suffix=f;
+        }
+        suffix = suffix.toLowerCase();
+        if (RAR.equals(suffix)) {
+            msg = ZFileUtil.unrar(compressedFilePath, targetPath, false,files);
+        }
+        if (ZIP.equals(suffix)) {
+            msg = ZFileUtil.unzip(compressedFilePath, targetPath, false,files);
+        }
+        if (SEVEN_Z.equals(suffix)) {
+            msg = ZFileUtil.unSevenZ(compressedFilePath, targetPath, false,files);
+        }
 
 
         return msg;
@@ -927,8 +985,6 @@ public class ZFileUtil {
         BufferedOutputStream bos = null;
         java.io.FileOutputStream fos = null;
         try {
-
-
             byte[] bytes = Base64.getDecoder().decode(base64.trim());
             file = new File(filePath + fileName);
             fos = new java.io.FileOutputStream(file);
@@ -1012,10 +1068,22 @@ public class ZFileUtil {
 
     }
 
+
+    /**
+     * 计算文件MD5
+     * @param file  wenj
+     * @return
+     * @throws IOException
+     */
+    public  static  String HexMd5(String file) throws IOException {
+      return   DigestUtils.md5Hex(new FileInputStream(file));
+    }
+
     public static void main(String[] args) throws IOException {
 
-     //  fileToZip("d:/dd","d://mydd","test");
-       unCompressedFilesToSameDir("d:/mydd/test.zip","d://mydd//ss",".zip");
+      // fileToZip("d:/dd","d://mydd","test");
+        StringBuffer lstPath=new StringBuffer();
+     String str=  unCompressedFiles("d:/mydd/test.zip","d://mydd//ss",".zip",lstPath);
 
     }
 }
